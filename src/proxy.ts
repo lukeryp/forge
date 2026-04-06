@@ -5,7 +5,7 @@ import { checkRateLimit } from '@/lib/api/middleware';
 const AUTH_RATE_LIMIT_MAX    = 10;
 const AUTH_RATE_LIMIT_WINDOW = 15 * 60 * 1000;
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Rate limit auth endpoints
