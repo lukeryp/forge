@@ -1,26 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* ── RYP Brand Theme (Tailwind v4) ────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Brand colors */
+  --color-brand-green:  #00af51;
+  --color-brand-yellow: #f4ee19;
+  --color-brand-black:  #0d0d0d;
+
+  /* Semantic colors (dark theme) */
+  --color-background:       hsl(222 20% 6%);
+  --color-foreground:       hsl(0 0% 95%);
+  --color-muted:            hsl(222 15% 12%);
+  --color-muted-foreground: hsl(215 16% 47%);
+  --color-border:           hsl(222 15% 14%);
+  --color-card:             hsl(222 18% 9%);
+  --color-destructive:      hsl(0 72% 51%);
+
+  /* Font families */
+  --font-sans: 'Raleway', system-ui, sans-serif;
+  --font-body: 'Work Sans', system-ui, sans-serif;
+
+  /* Animations */
+  --animate-fade-in:    fadeIn 0.3s ease-out;
+  --animate-slide-up:   slideUp 0.3s ease-out;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGreen {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 175, 81, 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(0, 175, 81, 0); }
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: hsl(222 20% 6%);
+  color: hsl(0 0% 95%);
+  font-family: 'Work Sans', system-ui, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Raleway', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+/* ── Glass-morphism utilities ─────────────────────────────────────── */
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .glass-hover {
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .glass-hover:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-green {
+    background: rgba(0, 175, 81, 0.08);
+    border: 1px solid rgba(0, 175, 81, 0.2);
+  }
+
+  .glow-green {
+    box-shadow: 0 0 20px rgba(0, 175, 81, 0.15);
+  }
+
+  .text-gradient-green {
+    background: linear-gradient(135deg, #00af51, #00e668);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-yellow {
+    background: linear-gradient(135deg, #f4ee19, #ffff80);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .animate-fade-in   { animation: fadeIn 0.3s ease-out; }
+  .animate-slide-up  { animation: slideUp 0.3s ease-out; }
+  .animate-pulse-green { animation: pulseGreen 2s infinite; }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(222 15% 14%) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(222 15% 14%);
+    border-radius: 2px;
+  }
+}
+
+/* ── Recharts customization ─────────────────────────────────────── */
+.recharts-cartesian-axis-tick-value {
+  fill: hsl(215 16% 47%) !important;
+  font-size: 12px;
+  font-family: 'Work Sans', sans-serif;
 }
