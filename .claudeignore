@@ -1,0 +1,12 @@
+.env
+.env.local
+.env.production
+.env*.local
+**/credentials*
+**/secrets*
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/service-account*.json
+.vercel/project.json
