@@ -11,15 +11,18 @@ const supabaseOrigin = (() => {
   }
 })();
 
+const HCAPTCHA = 'https://hcaptcha.com https://*.hcaptcha.com';
+
 // Content Security Policy — report-safe but strict. If you need to relax for
 // a third-party analytics/tag, add its origin to the relevant directive.
 const contentSecurityPolicy = [
   `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline' 'unsafe-eval'`, // Next 16 inlines some runtime scripts; eval used by Turbopack HMR in dev — tighten in prod build if desired
-  `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${HCAPTCHA}`,
+  `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com ${HCAPTCHA}`,
   `img-src 'self' data: blob:`,
   `font-src 'self' https://fonts.gstatic.com data:`,
-  `connect-src 'self' ${supabaseOrigin} https://fonts.googleapis.com https://fonts.gstatic.com`,
+  `connect-src 'self' ${supabaseOrigin} https://fonts.googleapis.com https://fonts.gstatic.com ${HCAPTCHA}`,
+  `frame-src ${HCAPTCHA}`,
   `frame-ancestors 'none'`,
   `base-uri 'self'`,
   `form-action 'self'`,
