@@ -8,15 +8,17 @@ import { createClient } from '@/lib/supabase/client';
 
 const HCAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
 
-function LoginForm() {
+function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next') ?? '/';
 
+  const [name, setName]         = useState('');
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError]       = useState<string | null>(null);
+  const [info,  setInfo]        = useState<string | null>(null);
   const [loading, setLoading]   = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<HCaptcha>(null);
@@ -24,6 +26,12 @@ function LoginForm() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setInfo(null);
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
 
     if (HCAPTCHA_SITE_KEY && !captchaToken) {
       setError('Please complete the captcha.');
@@ -31,20 +39,30 @@ function LoginForm() {
     }
 
     setLoading(true);
-
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data, error: signErr } = await supabase.auth.signUp({
         email,
         password,
-        options: { captchaToken: captchaToken ?? undefined },
+        options: {
+          data: { name: name.trim() || null },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          captchaToken: captchaToken ?? undefined,
+        },
       });
 
+      // hCaptcha tokens are single-use; reset after every submit attempt
       captchaRef.current?.resetCaptcha();
       setCaptchaToken(null);
 
-      if (authError) {
-        setError(authError.message);
+      if (signErr) {
+        setError(signErr.message);
+        return;
+      }
+
+      // If email confirmations are enabled in Supabase, session will be null.
+      if (!data.session) {
+        setInfo('Check your inbox to confirm your email, then sign in.');
         return;
       }
 
@@ -71,7 +89,7 @@ function LoginForm() {
             </span>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-            Sign in to track your FORGE Performance Index.
+            Create your FORGE account.
           </p>
         </div>
 
@@ -91,6 +109,35 @@ function LoginForm() {
               </div>
             )}
 
+            {info && (
+              <div
+                className="text-sm rounded-[8px] px-4 py-3"
+                style={{
+                  background: 'rgba(0, 201, 111, 0.08)',
+                  border: '1px solid rgba(0, 201, 111, 0.30)',
+                  color: '#00C96F',
+                }}
+                role="status"
+              >
+                {info}
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="name" className="ryp-label block mb-2">
+                Name
+              </label>
+              <input
+                id="name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="ryp-input"
+                placeholder="Optional"
+              />
+            </div>
+
             <div>
               <label htmlFor="email" className="ryp-label block mb-2">
                 Email
@@ -109,14 +156,15 @@ function LoginForm() {
 
             <div>
               <label htmlFor="password" className="ryp-label block mb-2">
-                Password
+                Password — at least 8 characters
               </label>
               <div style={{ position: 'relative' }}>
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  autoComplete="current-password"
+                  minLength={8}
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="ryp-input"
@@ -166,7 +214,7 @@ function LoginForm() {
               className="ryp-btn-primary w-full"
               style={{ padding: '12px 16px' }}
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? 'Creating account…' : 'Create account'}
             </button>
           </form>
 
@@ -174,9 +222,9 @@ function LoginForm() {
             className="text-center mt-6"
             style={{ color: 'var(--text-muted)', fontSize: 13 }}
           >
-            New to FORGE?{' '}
-            <Link href="/signup" style={{ color: '#EDE8DC' }} className="hover:underline">
-              Create an account
+            Already have an account?{' '}
+            <Link href="/login" style={{ color: '#EDE8DC' }} className="hover:underline">
+              Sign in
             </Link>
           </p>
         </div>
@@ -185,14 +233,12 @@ function LoginForm() {
   );
 }
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <Suspense
-      fallback={
-        <div className="min-h-screen" style={{ background: 'var(--surface-primary)' }} />
-      }
+      fallback={<div className="min-h-screen" style={{ background: 'var(--surface-primary)' }} />}
     >
-      <LoginForm />
+      <SignupForm />
     </Suspense>
   );
 }
