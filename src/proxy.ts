@@ -37,9 +37,10 @@ export async function proxy(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  const isAuthPage   = pathname === '/login';
-  const isApiRoute   = pathname.startsWith('/api/');
-  const isPublic     = isAuthPage || isApiRoute;
+  const isAuthPage    = pathname === '/login' || pathname === '/signup';
+  const isAuthCallback = pathname.startsWith('/auth/');
+  const isApiRoute    = pathname.startsWith('/api/');
+  const isPublic      = isAuthPage || isAuthCallback || isApiRoute;
   const isProtected  = !isPublic;
 
   if (!user && isProtected) {
