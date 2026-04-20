@@ -1,39 +1,36 @@
-/**
- * NewSessionForm — Client Component
- *
- * Multi-step wizard for creating a FORGE session and scoring all 4 drills.
- *
- * Steps:
- *   0 — Session setup (date, notes)
- *   1 — Driving drill score
- *   2 — Approach drill score
- *   3 — Chipping drill score
- *   4 — Putting drill score
- *   5 — Completion screen (shows RYP index)
- *
- * The session is created on the server when the user advances from step 0.
- * Each drill score is submitted individually as the user completes each step.
- * If the user leaves mid-session, the in-progress session is preserved.
- */
-
 'use client';
 
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import { DrillScoreForm } from './DrillScoreForm';
 import { RypIndexGauge } from './RypIndexGauge';
 import { DRILL_LABELS } from '@/lib/forge/constants';
-import { computeRypIndex } from '@/lib/forge/scoring';
+import { computeRypIndex, indexTone } from '@/lib/forge/scoring';
 import type { ForgeDrillType } from '@/lib/forge/constants';
-
-interface NewSessionFormProps {
-  playerId: string;
-}
 
 type StepId = 'setup' | ForgeDrillType | 'complete';
 
 const DRILL_STEPS: ForgeDrillType[] = ['driving', 'approach', 'chipping', 'putting'];
+
+const FAIRWAY = '#00C96F';
+const BONE    = '#EDE8DC';
+const ASH     = '#8A8A82';
+const CLAY    = '#C75B39';
+
+function stepColour(drill: ForgeDrillType, score: number | undefined): string {
+  if (score === undefined) return 'rgba(237, 232, 220, 0.25)';
+  const tone = indexTone(drill, score);
+  if (tone === 'elite' || tone === 'tour') return FAIRWAY;
+  if (tone === 'strong' || tone === 'average') return BONE;
+  if (tone === 'developing') return ASH;
+  return CLAY;
+}
+
+function signed(n: number | undefined): string {
+  if (n === undefined) return '—';
+  const r = Math.round(n);
+  return r > 0 ? `+${r}` : String(r);
+}
 
 // ── Step indicator ─────────────────────────────────────────────────────────────
 
@@ -55,7 +52,7 @@ function StepIndicator({
   const currentIdx = steps.findIndex((s) => s.id === currentStep);
 
   return (
-    <div className="flex items-center gap-1.5" aria-label="Progress">
+    <div className="flex items-center gap-2" aria-label="Progress">
       {steps.map((step, idx) => {
         const isDone    = currentStep === 'complete' || idx < currentIdx;
         const isActive  = step.id === currentStep;
@@ -63,25 +60,30 @@ function StepIndicator({
           && drillScores[step.id as ForgeDrillType] !== undefined;
 
         return (
-          <div key={step.id} className="flex items-center gap-1.5">
+          <div key={step.id} className="flex items-center gap-2">
             {idx > 0 && (
               <div
-                className={cn(
-                  'h-px w-4 flex-shrink-0 transition-colors',
-                  isDone ? 'bg-brand-green' : 'bg-white/[0.1]',
-                )}
+                className="h-px w-4 flex-shrink-0 transition-colors"
+                style={{
+                  background: isDone ? FAIRWAY : 'var(--border-subtle)',
+                }}
               />
             )}
             <div
-              className={cn(
-                'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 transition-all',
-                isDone || drillDone
-                  ? 'bg-brand-green text-white'
-                  : isActive
-                    ? 'border-2 border-brand-green text-brand-green bg-transparent'
-                    : 'border border-white/[0.15] text-muted-foreground/50 bg-transparent',
-              )}
-              aria-current={isActive ? 'step' : undefined}
+              className="w-7 h-7 flex items-center justify-center flex-shrink-0 transition-colors"
+              style={{
+                background: (isDone || drillDone) ? FAIRWAY : 'transparent',
+                color: (isDone || drillDone) ? '#0A0A0A'
+                  : isActive ? FAIRWAY : ASH,
+                border: (isDone || drillDone) ? '0'
+                  : isActive ? `1.5px solid ${FAIRWAY}`
+                  : '1px solid var(--border-subtle)',
+                borderRadius: 4,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 500,
+                fontSize: 11,
+              }}
+              aria-hidden="true"
             >
               {isDone || drillDone ? '✓' : idx + 1}
             </div>
@@ -95,10 +97,8 @@ function StepIndicator({
 // ── Setup step ─────────────────────────────────────────────────────────────────
 
 function SetupStep({
-  playerId,
   onCreated,
 }: {
-  playerId:  string;
   onCreated: (sessionId: string) => void;
 }) {
   const today = new Date().toISOString().split('T')[0];
@@ -117,7 +117,6 @@ function SetupStep({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          player_id:    playerId,
           session_date: date,
           notes:        notes.trim() || undefined,
         }),
@@ -139,16 +138,17 @@ function SetupStep({
   }
 
   return (
-    <form onSubmit={(e) => { void handleStart(e); }} className="space-y-6" noValidate>
+    <form onSubmit={(e) => { e.preventDefault(); void handleStart(e); }} className="space-y-6" noValidate>
       <div>
-        <h2 className="text-xl font-bold">Start FORGE Session</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          You&apos;ll score all 4 drills step by step.
+        <p className="ryp-label">New session</p>
+        <h2 className="ryp-h2" style={{ marginTop: 8 }}>Start scoring</h2>
+        <p style={{ color: ASH, fontSize: 13, marginTop: 6 }}>
+          Score all four drills, one step at a time.
         </p>
       </div>
 
-      <div className="space-y-1.5">
-        <label htmlFor="session_date" className="block text-sm font-medium">
+      <div className="space-y-2">
+        <label htmlFor="session_date" className="ryp-label block">
           Session date
         </label>
         <input
@@ -158,27 +158,37 @@ function SetupStep({
           value={date}
           max={today}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full bg-white/[0.06] border border-white/[0.1] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-green/50 focus:ring-1 focus:ring-brand-green/30"
+          className="ryp-input"
         />
       </div>
 
-      <div className="space-y-1.5">
-        <label htmlFor="session_notes" className="block text-sm font-medium">
-          Session notes <span className="text-muted-foreground font-normal">(optional)</span>
+      <div className="space-y-2">
+        <label htmlFor="session_notes" className="ryp-label block">
+          Notes — optional
         </label>
         <textarea
           id="session_notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Conditions, goals, what you&apos;re working on…"
+          placeholder="Conditions, goals, what you're working on."
           maxLength={1000}
           rows={3}
-          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:border-brand-green/40 focus:ring-1 focus:ring-brand-green/20"
+          className="ryp-input resize-none"
         />
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+        <p
+          role="alert"
+          className="px-3 py-2"
+          style={{
+            color: CLAY,
+            fontSize: 13,
+            background: 'rgba(199, 91, 57, 0.10)',
+            border: '1px solid rgba(199, 91, 57, 0.30)',
+            borderRadius: 8,
+          }}
+        >
           {error}
         </p>
       )}
@@ -186,13 +196,10 @@ function SetupStep({
       <button
         type="submit"
         disabled={submitting}
-        className={cn(
-          'w-full rounded-xl py-3.5 text-sm font-semibold transition-all',
-          'bg-brand-green text-white hover:bg-brand-green/90 active:scale-[0.98]',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
-        )}
+        className="ryp-btn-primary w-full"
+        style={{ padding: '12px 16px' }}
       >
-        {submitting ? 'Creating session…' : 'Begin Scoring →'}
+        {submitting ? 'Creating session…' : 'Begin scoring →'}
       </button>
     </form>
   );
@@ -206,8 +213,8 @@ function CompleteStep({
   onViewSession,
   onNewSession,
 }: {
-  sessionId:    string;
-  drillScores:  Partial<Record<ForgeDrillType, number>>;
+  sessionId:     string;
+  drillScores:   Partial<Record<ForgeDrillType, number>>;
   onViewSession: () => void;
   onNewSession:  () => void;
 }) {
@@ -217,25 +224,64 @@ function CompleteStep({
     chipping_index: drillScores.chipping ?? null,
     putting_index:  drillScores.putting  ?? null,
   };
-  const rypResult  = computeRypIndex(pillars);
-  const pillarsN   = rypResult?.pillars_scored ?? 0;
+  const rypResult = computeRypIndex(pillars);
+  const pillarsN  = rypResult?.pillars_scored ?? 0;
+  const [patchError, setPatchError] = useState<string | null>(null);
+  const [patchState, setPatchState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
-  // Mark session complete in background
-  useState(() => {
-    void fetch(`/api/forge/sessions/${sessionId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completed_at: new Date().toISOString() }),
-    });
-  });
+  const markComplete = React.useCallback(async () => {
+    setPatchState('saving');
+    setPatchError(null);
+    try {
+      const res = await fetch(`/api/forge/sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed_at: new Date().toISOString() }),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      setPatchState('saved');
+    } catch (e) {
+      setPatchState('error');
+      setPatchError(e instanceof Error ? e.message : 'Unknown error');
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
+    void markComplete();
+  }, [markComplete]);
 
   return (
-    <div className="flex flex-col items-center gap-6 py-4">
+    <div className="flex flex-col items-center gap-8 py-4">
       <div className="text-center">
-        <p className="text-xs text-brand-green uppercase tracking-widest font-semibold mb-1">
-          Session Complete
-        </p>
-        <h2 className="text-2xl font-bold">The Forge is done.</h2>
+        <p className="ryp-label" style={{ color: FAIRWAY }}>Session complete</p>
+        <h2 className="ryp-h2" style={{ marginTop: 8 }}>Four drills in the books.</h2>
+        {patchState === 'error' && patchError && (
+          <div
+            className="mt-4 px-3 py-2"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(199, 91, 57, 0.30)',
+              borderRadius: 8,
+              color: BONE,
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              justifyContent: 'center',
+            }}
+            role="alert"
+          >
+            <span style={{ color: CLAY }}>Couldn&rsquo;t mark complete</span>
+            <button
+              type="button"
+              onClick={() => { void markComplete(); }}
+              className="ryp-btn-tertiary"
+              style={{ fontSize: 13 }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
       </div>
 
       <RypIndexGauge
@@ -243,23 +289,23 @@ function CompleteStep({
         pillarsScored={pillarsN}
       />
 
-      {/* Per-pillar summary */}
-      <div className="w-full space-y-2">
+      <div className="w-full space-y-3">
         {DRILL_STEPS.map((drill) => {
           const idx = drillScores[drill];
           return (
-            <div key={drill} className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{DRILL_LABELS[drill]}</span>
+            <div
+              key={drill}
+              className="flex items-center justify-between py-2"
+              style={{ borderBottom: '1px solid var(--border-subtle)' }}
+            >
+              <span style={{ color: ASH, fontSize: 13 }}>
+                {DRILL_LABELS[drill]}
+              </span>
               <span
-                className="font-semibold tabular-nums"
-                style={{
-                  color: idx === undefined ? 'rgba(255,255,255,0.3)'
-                    : idx >= 75 ? '#00af51'
-                    : idx >= 50 ? '#f4ee19'
-                    : '#ef4444',
-                }}
+                className="ryp-mono"
+                style={{ fontSize: 16, fontWeight: 500, color: stepColour(drill, idx) }}
               >
-                {idx !== undefined ? Math.round(idx) : '—'}
+                {signed(idx)}
               </span>
             </div>
           );
@@ -269,15 +315,17 @@ function CompleteStep({
       <div className="flex flex-col gap-3 w-full">
         <button
           onClick={onViewSession}
-          className="w-full rounded-xl py-3 text-sm font-semibold bg-brand-green text-white hover:bg-brand-green/90 transition active:scale-[0.98]"
+          className="ryp-btn-primary w-full"
+          style={{ padding: '12px 16px' }}
         >
-          View Session Detail →
+          View session detail →
         </button>
         <button
           onClick={onNewSession}
-          className="w-full rounded-xl py-3 text-sm font-medium border border-white/[0.1] hover:bg-white/[0.04] transition"
+          className="ryp-btn-secondary w-full"
+          style={{ padding: '12px 16px' }}
         >
-          Start Another Session
+          Start another session
         </button>
       </div>
     </div>
@@ -286,11 +334,11 @@ function CompleteStep({
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export function NewSessionForm({ playerId }: NewSessionFormProps) {
+export function NewSessionForm() {
   const router = useRouter();
 
-  const [sessionId,   setSessionId]  = useState<string | null>(null);
-  const [currentStep, setStep]       = useState<StepId>('setup');
+  const [sessionId,   setSessionId]   = useState<string | null>(null);
+  const [currentStep, setStep]        = useState<StepId>('setup');
   const [drillScores, setDrillScores] = useState<Partial<Record<ForgeDrillType, number>>>({});
 
   const currentDrillIdx = DRILL_STEPS.indexOf(currentStep as ForgeDrillType);
@@ -319,7 +367,7 @@ export function NewSessionForm({ playerId }: NewSessionFormProps) {
       <CompleteStep
         sessionId={sessionId}
         drillScores={drillScores}
-        onViewSession={() => router.push(`/forge/sessions/${sessionId}`)}
+        onViewSession={() => router.push(`/sessions/${sessionId}`)}
         onNewSession={() => {
           setSessionId(null);
           setStep('setup');
@@ -330,23 +378,18 @@ export function NewSessionForm({ playerId }: NewSessionFormProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Step indicator (shown once session is created) */}
+    <div className="space-y-8">
       {sessionId && (
         <div className="flex items-center justify-between">
-          <StepIndicator
-            currentStep={currentStep}
-            drillScores={drillScores}
-          />
-          <span className="text-xs text-muted-foreground">
-            {currentStep !== 'setup' && `${DRILL_LABELS[currentStep as ForgeDrillType]} drill`}
+          <StepIndicator currentStep={currentStep} drillScores={drillScores} />
+          <span className="ryp-label">
+            {currentStep !== 'setup' && DRILL_LABELS[currentStep as ForgeDrillType]}
           </span>
         </div>
       )}
 
       {currentStep === 'setup' && (
         <SetupStep
-          playerId={playerId}
           onCreated={(id) => {
             setSessionId(id);
             setStep('driving');
@@ -366,3 +409,4 @@ export function NewSessionForm({ playerId }: NewSessionFormProps) {
     </div>
   );
 }
+

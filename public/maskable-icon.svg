@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Full bleed Sumi background; Android masks crop to inner 80% circle/squircle. -->
+  <rect width="512" height="512" fill="#0A0A0A"/>
+  <!-- All content kept inside the 409x409 safe zone (offset 51.5, 51.5). -->
+  <!-- Ball-flight arc, centered, scaled to ~60% of safe width to keep clear margins. -->
+  <path
+    d="M 180 300 Q 256 180, 332 300"
+    stroke="#00C96F"
+    stroke-width="12"
+    stroke-linecap="round"
+    fill="none"
+  />
+  <circle cx="332" cy="300" r="14" fill="#00C96F"/>
+  <!-- Wordmark, centered, 32px body, well inside the safe zone. -->
+  <text
+    x="256"
+    y="362"
+    text-anchor="middle"
+    font-family="Syncopate, 'Arial Narrow', sans-serif"
+    font-weight="700"
+    font-size="40"
+    letter-spacing="5"
+    fill="#EDE8DC"
+  >FORGE</text>
+</svg>

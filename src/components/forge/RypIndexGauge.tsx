@@ -1,89 +1,82 @@
-/**
- * RypIndexGauge
- *
- * Displays the RYP Performance Index as a circular gauge with a
- * glass-morphism card. Shows partial progress when fewer than 4 drills
- * are scored. Animates the arc on mount.
- */
-
 import { cn } from '@/lib/utils';
-import { skillIndexLabel } from '@/lib/forge/scoring';
+import { compositeTier } from '@/lib/forge/scoring';
 import { RYP_INDEX_MIN_DRILLS } from '@/lib/forge/constants';
 
 interface RypIndexGaugeProps {
   rypIndex:      number | null;
   pillarsScored: number;
-  /** Show a compact (smaller) variant for use inside cards */
   compact?:      boolean;
   className?:    string;
 }
 
-function getIndexColour(score: number): string {
-  if (score >= 75) return '#00af51'; // brand-green — elite / advanced
-  if (score >= 50) return '#f4ee19'; // brand-yellow — developing / foundational
-  return '#ef4444';                  // red — building
+const FAIRWAY = '#00C96F';
+const BONE    = '#EDE8DC';
+const ASH     = '#8A8A82';
+const CLAY    = '#C75B39';
+
+// Clamp for progress arc. Map signed Ryp Index (roughly −15..+25) to 0..100%.
+function progressPct(index: number | null): number {
+  if (index === null) return 0;
+  const minIdx = -15;
+  const maxIdx = 25;
+  const pct = 100 - ((index - minIdx) / (maxIdx - minIdx)) * 100; // lower index = fuller arc
+  return Math.max(0, Math.min(100, pct));
 }
 
-/**
- * Pure SVG arc gauge — no external dependencies, no canvas.
- * Uses a stroke-dashoffset trick for the progress arc.
- */
+function toneColour(tone: string): string {
+  switch (tone) {
+    case 'elite':
+    case 'tour':
+      return FAIRWAY;
+    case 'strong':
+    case 'average':
+      return BONE;
+    case 'developing':
+      return ASH;
+    case 'needs_work':
+    default:
+      return CLAY;
+  }
+}
+
 function ArcGauge({
-  score,
+  pct,
+  colour,
   size,
   strokeWidth,
 }: {
-  score:       number;
+  pct:         number;
+  colour:      string;
   size:        number;
   strokeWidth: number;
 }) {
-  const radius    = (size - strokeWidth) / 2;
-  const center    = size / 2;
-  // Gauge covers 270° (¾ circle), starting from the bottom-left
-  const arcDeg    = 270;
-
-  const circumference = 2 * Math.PI * radius;
-  const arcLength     = (arcDeg / 360) * circumference;
-  const progress      = (score / 100) * arcLength;
-
-  const colour = getIndexColour(score);
+  const radius   = (size - strokeWidth) / 2;
+  const center   = size / 2;
+  const arcDeg   = 270;
+  const circ     = 2 * Math.PI * radius;
+  const arcLen   = (arcDeg / 360) * circ;
+  const progress = (pct / 100) * arcLen;
 
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      aria-hidden="true"
-    >
-      {/* Track (background arc) */}
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
       <circle
-        cx={center}
-        cy={center}
-        r={radius}
+        cx={center} cy={center} r={radius}
         fill="none"
-        stroke="rgba(255,255,255,0.07)"
+        stroke="rgba(237, 232, 220, 0.10)"
         strokeWidth={strokeWidth}
-        strokeDasharray={`${arcLength} ${circumference}`}
-        strokeDashoffset={0}
+        strokeDasharray={`${arcLen} ${circ}`}
         strokeLinecap="round"
         transform={`rotate(${180 - (360 - arcDeg) / 2}, ${center}, ${center})`}
       />
-      {/* Progress arc */}
       <circle
-        cx={center}
-        cy={center}
-        r={radius}
+        cx={center} cy={center} r={radius}
         fill="none"
         stroke={colour}
         strokeWidth={strokeWidth}
-        strokeDasharray={`${progress} ${circumference}`}
-        strokeDashoffset={0}
+        strokeDasharray={`${progress} ${circ}`}
         strokeLinecap="round"
         transform={`rotate(${180 - (360 - arcDeg) / 2}, ${center}, ${center})`}
-        style={{
-          filter: `drop-shadow(0 0 6px ${colour}88)`,
-          transition: 'stroke-dasharray 0.8s ease-out',
-        }}
+        style={{ transition: 'stroke-dasharray 600ms ease-out' }}
       />
     </svg>
   );
@@ -96,29 +89,33 @@ export function RypIndexGauge({
   className,
 }: RypIndexGaugeProps) {
   const isComplete = pillarsScored >= RYP_INDEX_MIN_DRILLS;
-  const score      = rypIndex ?? 0;
-  const label      = rypIndex !== null ? skillIndexLabel(score) : '—';
-  const colour     = rypIndex !== null ? getIndexColour(score) : 'rgba(255,255,255,0.3)';
+  const tier       = rypIndex !== null ? compositeTier(rypIndex) : null;
+  const colour     = tier ? toneColour(tier.tone) : ASH;
+  const pct        = progressPct(rypIndex);
+  const label      = tier?.label ?? '—';
+  const signed     = rypIndex !== null
+    ? (rypIndex > 0 ? `+${Math.round(rypIndex)}` : Math.round(rypIndex))
+    : '—';
 
   if (compact) {
     return (
       <div className={cn('relative flex items-center gap-3', className)}>
         <div className="relative" style={{ width: 56, height: 56 }}>
-          <ArcGauge score={score} size={56} strokeWidth={5} />
+          <ArcGauge pct={pct} colour={colour} size={56} strokeWidth={5} />
           <span
-            className="absolute inset-0 flex items-center justify-center text-sm font-bold"
-            style={{ color: colour }}
+            className="absolute inset-0 flex items-center justify-center ryp-mono"
+            style={{ fontSize: 13, fontWeight: 500, color: colour }}
           >
-            {rypIndex !== null ? Math.round(score) : '—'}
+            {signed}
           </span>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">RYP Index</p>
-          <p className="text-base font-semibold" style={{ color: colour }}>
+          <p className="ryp-label">FORGE Index</p>
+          <p style={{ color: colour, fontSize: 14, fontWeight: 600, marginTop: 2 }}>
             {label}
           </p>
           {!isComplete && rypIndex !== null && (
-            <p className="text-[10px] text-muted-foreground">
+            <p className="ryp-mono" style={{ fontSize: 11, color: ASH }}>
               {pillarsScored}/4 drills
             </p>
           )}
@@ -128,39 +125,38 @@ export function RypIndexGauge({
   }
 
   return (
-    <div className={cn('flex flex-col items-center gap-2', className)}>
-      <div className="relative" style={{ width: 160, height: 160 }}>
-        <ArcGauge score={score} size={160} strokeWidth={10} />
-        {/* Centre text */}
+    <div className={cn('flex flex-col items-center gap-3', className)}>
+      <div className="relative" style={{ width: 180, height: 180 }}>
+        <ArcGauge pct={pct} colour={colour} size={180} strokeWidth={10} />
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span
-            className="text-4xl font-bold tabular-nums"
-            style={{ color: colour }}
+            className="ryp-mono"
+            style={{
+              fontSize: 48,
+              fontWeight: 500,
+              lineHeight: 1,
+              letterSpacing: '-0.02em',
+              color: colour,
+            }}
           >
-            {rypIndex !== null ? Math.round(score) : '—'}
+            {signed}
           </span>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-            / 100
+          <span className="ryp-label" style={{ marginTop: 6 }}>
+            FORGE Index
           </span>
         </div>
       </div>
 
-      {/* Label row */}
       <div className="text-center">
-        <p
-          className="text-lg font-semibold"
-          style={{ color: colour }}
-        >
-          {label}
-        </p>
-        <p className="text-xs text-muted-foreground">RYP Performance Index</p>
+        <p style={{ color: colour, fontSize: 18, fontWeight: 600 }}>{label}</p>
+        <p style={{ color: ASH, fontSize: 13, marginTop: 2 }}>FORGE Performance Index</p>
         {!isComplete && rypIndex !== null && (
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="ryp-label" style={{ marginTop: 8 }}>
             Partial — {pillarsScored} of 4 drills scored
           </p>
         )}
         {rypIndex === null && (
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="ryp-label" style={{ marginTop: 8 }}>
             No drills scored yet
           </p>
         )}

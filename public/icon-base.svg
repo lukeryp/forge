@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="96" fill="#0A0A0A"/>
+  <path d="M 76 300 Q 256 96, 436 300" stroke="#00C96F" stroke-width="18" stroke-linecap="round" fill="none"/>
+  <circle cx="436" cy="300" r="22" fill="#00C96F"/>
+  <text x="256" y="420" text-anchor="middle" font-family="Syncopate, Arial Narrow, sans-serif" font-weight="700" font-size="72" letter-spacing="8" fill="#EDE8DC">FORGE</text>
+</svg>

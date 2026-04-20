@@ -1,14 +1,5 @@
-/**
- * API middleware utilities:
- * - Request logging
- * - Authentication check
- * - Rate limiting (in-memory, single-instance — use Redis for multi-instance prod)
- * - Standard error responses
- */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import type { UserRole } from '@/lib/types';
 
 // ── Standard API responses ────────────────────────────────────────────────────
 
@@ -45,12 +36,10 @@ export function logRequest(req: NextRequest, status: number, durationMs: number)
   const method = req.method;
   const path   = req.nextUrl.pathname;
   const ts     = new Date().toISOString();
-  // In prod, replace with structured logger (e.g. Pino, Axiom)
   console.log(`[${ts}] ${method} ${path} → ${status} (${durationMs}ms)`);
 }
 
 // ── In-memory rate limiter ────────────────────────────────────────────────────
-// For production multi-instance deploys, replace with Upstash Redis.
 
 interface RateLimitWindow {
   count: number;
@@ -69,25 +58,20 @@ export function checkRateLimit(
 
   if (!existing || now > existing.resetAt) {
     rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
-    return true; // allowed
+    return true;
   }
-
   if (existing.count >= maxRequests) {
-    return false; // blocked
+    return false;
   }
-
   existing.count++;
-  return true; // allowed
+  return true;
 }
 
-// Prune stale entries every 5 minutes (prevent memory leak in long-running server)
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
     const now = Date.now();
     for (const [key, window] of rateLimitStore.entries()) {
-      if (now > window.resetAt) {
-        rateLimitStore.delete(key);
-      }
+      if (now > window.resetAt) rateLimitStore.delete(key);
     }
   }, 5 * 60 * 1000);
 }
@@ -96,70 +80,16 @@ if (typeof setInterval !== 'undefined') {
 
 export interface AuthContext {
   userId: string;
-  email: string;
-  role: UserRole;
-  clubId: string | null;
+  email:  string;
 }
 
-/**
- * Validate session and fetch user role from DB.
- * Returns null if not authenticated.
- */
 export async function requireAuth(): Promise<AuthContext | null> {
   try {
     const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
-
     if (error || !user) return null;
-
-    const { data: dbUser } = await supabase
-      .from('users')
-      .select('id, role, club_id')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .single();
-
-    if (!dbUser) return null;
-
-    return {
-      userId: user.id,
-      email: user.email ?? '',
-      role: dbUser.role as UserRole,
-      clubId: dbUser.club_id ?? null,
-    };
+    return { userId: user.id, email: user.email ?? '' };
   } catch {
     return null;
   }
-}
-
-// ── Pagination ────────────────────────────────────────────────────────────────
-
-export interface PaginationParams {
-  page: number;
-  limit: number;
-  offset: number;
-}
-
-export const PAGINATION_DEFAULTS = {
-  page:     1,
-  limit:    20,
-  maxLimit: 100,
-} as const;
-
-export function parsePagination(searchParams: URLSearchParams): PaginationParams {
-  const page  = Math.max(1, parseInt(searchParams.get('page')  ?? '1', 10));
-  const limit = Math.min(
-    PAGINATION_DEFAULTS.maxLimit,
-    Math.max(1, parseInt(searchParams.get('limit') ?? String(PAGINATION_DEFAULTS.limit), 10)),
-  );
-  return { page, limit, offset: (page - 1) * limit };
-}
-
-export function paginationMeta(page: number, limit: number, total: number) {
-  return {
-    page,
-    limit,
-    total,
-    hasNextPage: page * limit < total,
-  };
 }

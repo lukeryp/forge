@@ -1,127 +1,290 @@
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
-/* ── RYP Brand Theme (Tailwind v4) ────────────────────────────────── */
+/* ==========================================================================
+   RYP Golf — FORGE design tokens (Brand Constitution v1.0)
+   ========================================================================== */
+:root {
+  --surface-primary:   #0A0A0A;   /* Sumi Black */
+  --surface-elevated:  #141414;   /* Raised */
+
+  --signal-primary:    #00C96F;   /* Fairway */
+  --signal-error:      #C75B39;   /* Clay */
+  --alert-warm:        #C75B39;
+
+  --text-primary:      #EDE8DC;   /* Bone */
+  --text-muted:        #A3A39A;   /* Ash — contrast-safe on Sumi (5.2:1, WCAG AA) */
+
+  --border-subtle:     rgba(237, 232, 220, 0.10);
+  --border-medium:     rgba(237, 232, 220, 0.30);
+  --border-strong:     rgba(237, 232, 220, 0.60);
+
+  --font-brand:     'Syncopate', 'Arial Narrow', sans-serif;
+  --font-ui:        'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:      'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  --radius-button: 8px;
+  --radius-card:   12px;
+
+  --tracking-caption: 0.08em;
+  --tracking-label:   0.06em;
+}
+
 @theme inline {
-  /* Brand colors */
-  --color-brand-green:  #00af51;
-  --color-brand-yellow: #f4ee19;
-  --color-brand-black:  #0d0d0d;
+  --color-surface:          #0A0A0A;
+  --color-surface-elevated: #141414;
+  --color-fairway:          #00C96F;
+  --color-bone:             #EDE8DC;
+  --color-ash:              #A3A39A;
+  --color-clay:             #C75B39;
+  --color-border-subtle:    rgba(237, 232, 220, 0.10);
+  --color-border-medium:    rgba(237, 232, 220, 0.30);
+  --color-border-strong:    rgba(237, 232, 220, 0.60);
 
-  /* Semantic colors (dark theme) */
-  --color-background:       hsl(222 20% 6%);
-  --color-foreground:       hsl(0 0% 95%);
-  --color-muted:            hsl(222 15% 12%);
-  --color-muted-foreground: hsl(215 16% 47%);
-  --color-border:           hsl(222 15% 14%);
-  --color-card:             hsl(222 18% 9%);
-  --color-destructive:      hsl(0 72% 51%);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-brand: 'Syncopate', 'Arial Narrow', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
 
-  /* Font families */
-  --font-sans: 'Raleway', system-ui, sans-serif;
-  --font-body: 'Work Sans', system-ui, sans-serif;
-
-  /* Animations */
-  --animate-fade-in:    fadeIn 0.3s ease-out;
-  --animate-slide-up:   slideUp 0.3s ease-out;
-  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-fade-in:  fadeIn 180ms ease-out;
+  --animate-slide-up: slideUp 180ms ease-out;
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes pulseGreen {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 175, 81, 0.4); }
-  50%       { box-shadow: 0 0 0 8px rgba(0, 175, 81, 0); }
-}
+html { color-scheme: dark; }
 
-html {
-  color-scheme: dark;
-}
-
-body {
-  background-color: hsl(222 20% 6%);
-  color: hsl(0 0% 95%);
-  font-family: 'Work Sans', system-ui, sans-serif;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+html, body {
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Raleway', system-ui, sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+body {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
-/* ── Glass-morphism utilities ─────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  color: var(--text-primary);
+}
+
+/* ==========================================================================
+   Semantic type classes (match RYP design system)
+   ========================================================================== */
+.ryp-brand {
+  font-family: var(--font-brand);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.ryp-h1 {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 36px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.ryp-h2 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.2;
+}
+.ryp-h3 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.3;
+}
+.ryp-label {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caption);
+  color: var(--text-muted);
+}
+.ryp-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   Utility layer — button + card primitives per constitution
+   ========================================================================== */
 @layer utilities {
-  .glass {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+  .ryp-card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-card);
   }
 
-  .glass-hover {
-    transition: background 0.2s ease, border-color 0.2s ease;
+  .ryp-card-interactive {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-card);
+    transition: border-color 120ms ease-out;
+  }
+  .ryp-card-interactive:hover {
+    border-color: var(--border-medium);
   }
 
-  .glass-hover:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.1);
+  .ryp-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--signal-primary);
+    color: var(--surface-primary);
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 14px;
+    border: 0;
+    border-radius: var(--radius-button);
+    padding: 10px 16px;
+    min-height: 44px;
+    cursor: pointer;
+    transition: background 120ms ease-out, color 120ms ease-out;
+  }
+  .ryp-btn-primary:hover {
+    background: var(--text-primary);
+    color: var(--surface-primary);
+  }
+  .ryp-btn-primary:focus-visible {
+    outline: 2px solid var(--signal-primary);
+    outline-offset: 2px;
+  }
+  .ryp-btn-primary:disabled {
+    background: #2A3A32;
+    color: var(--text-muted);
+    cursor: not-allowed;
   }
 
-  .glass-green {
-    background: rgba(0, 175, 81, 0.08);
-    border: 1px solid rgba(0, 175, 81, 0.2);
+  .ryp-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: 14px;
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-button);
+    padding: 10px 16px;
+    min-height: 44px;
+    cursor: pointer;
+    transition: border-color 120ms ease-out;
+  }
+  .ryp-btn-secondary:hover {
+    border-color: var(--border-strong);
+  }
+  .ryp-btn-secondary:focus-visible {
+    outline: 2px solid var(--signal-primary);
+    outline-offset: 2px;
   }
 
-  .glow-green {
-    box-shadow: 0 0 20px rgba(0, 175, 81, 0.15);
+  .ryp-btn-tertiary {
+    background: transparent;
+    color: var(--text-primary);
+    border: 0;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 6px 0;
+    min-height: 32px;
+    transition: color 120ms ease-out;
+  }
+  .ryp-btn-tertiary:hover {
+    color: var(--signal-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .ryp-btn-tertiary:focus-visible {
+    outline: 2px solid var(--signal-primary);
+    outline-offset: 3px;
+    border-radius: 2px;
   }
 
-  .text-gradient-green {
-    background: linear-gradient(135deg, #00af51, #00e668);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .ryp-input {
+    width: 100%;
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-button);
+    padding: 10px 12px;
+    min-height: 44px;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+  }
+  .ryp-input:focus-visible,
+  .ryp-input:focus {
+    outline: none;
+    border-color: var(--signal-primary);
+    box-shadow: 0 0 0 2px rgba(0, 201, 111, 0.30);
+  }
+  .ryp-input::placeholder { color: var(--text-muted); }
+
+  /* Default focus indicator for any other interactive element (links,
+     inline-styled buttons inside forms, etc.). Keeps the whole app
+     keyboard-navigable without per-component overrides. */
+  a:focus-visible,
+  button:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [role="button"]:focus-visible,
+  [role="switch"]:focus-visible {
+    outline: 2px solid var(--signal-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 
-  .text-gradient-yellow {
-    background: linear-gradient(135deg, #f4ee19, #ffff80);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .ryp-hairline {
+    border-color: var(--border-subtle);
   }
 
-  .animate-fade-in   { animation: fadeIn 0.3s ease-out; }
-  .animate-slide-up  { animation: slideUp 0.3s ease-out; }
-  .animate-pulse-green { animation: pulseGreen 2s infinite; }
+  .animate-fade-in   { animation: fadeIn 180ms ease-out; }
+  .animate-slide-up  { animation: slideUp 180ms ease-out; }
 
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: hsl(222 15% 14%) transparent;
+    scrollbar-color: var(--border-subtle) transparent;
   }
-
   .scrollbar-thin::-webkit-scrollbar { width: 4px; }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: hsl(222 15% 14%);
+    background-color: var(--border-subtle);
     border-radius: 2px;
   }
 }
 
-/* ── Recharts customization ─────────────────────────────────────── */
+/* ==========================================================================
+   Recharts theming
+   ========================================================================== */
 .recharts-cartesian-axis-tick-value {
-  fill: hsl(215 16% 47%) !important;
-  font-size: 12px;
-  font-family: 'Work Sans', sans-serif;
+  fill: var(--text-muted) !important;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+.recharts-cartesian-grid line {
+  stroke: var(--border-subtle) !important;
+}
+.recharts-tooltip-wrapper {
+  font-family: var(--font-ui);
 }
